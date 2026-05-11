@@ -10,168 +10,167 @@ Nume: Rusănescu Gabriel
 
 typedef struct{
     int n;
-    int** grid;
+    int** matrice;
     int** is_black;
-    int** best_is_black;
-    int found;
-} HitoriContext;
+    int** bestis_black;
+    int gasit;
+} hitori;
 
-void dfs(int r, int c, int n, int** is_black, int** visited){
-    if(r<0 || c<0 || r>=n || c>=n) return;
-    if(is_black[r][c] || visited[r][c]) return;
-    visited[r][c]=1;
-    dfs(r+1, c, n, is_black, visited);
-    dfs(r-1, c, n, is_black, visited);
-    dfs(r, c+1, n, is_black, visited);
-    dfs(r, c-1, n, is_black, visited);
+void dfs(int l, int c, int n, int** is_black, int** vizitat){
+    if(l<0 || c<0 || l>=n || c>=n) return;
+    if(is_black[l][c] || vizitat[l][c]) return;
+    vizitat[l][c]=1;
+    dfs(l+1, c, n, is_black, vizitat);
+    dfs(l-1, c, n, is_black, vizitat);
+    dfs(l, c+1, n, is_black, vizitat);
+    dfs(l, c-1, n, is_black, vizitat);
 }
 
-int check_connectivity(int n, int** is_black){
-    int** visited=(int**)malloc(n * sizeof(int*));
-    for(int i=0; i<n; i++) visited[i]=(int*)calloc(n, sizeof(int));
-    int start_r=-1, start_c=-1;
-    int white_count=0;
+int verificconectivitate(int n, int** is_black){
+    int** vizitat=(int**)malloc(n * sizeof(int*));
+    for(int i=0; i<n; i++) vizitat[i]=(int*)calloc(n, sizeof(int));
+    int startlinie=-1, startcol=-1;
+    int cntalbe=0;
     for(int i=0; i<n; i++){
         for(int j=0; j<n; j++){
             if(!is_black[i][j]){
-                if(start_r==-1){ start_r=i; start_c=j; }
-                white_count++;
+                if(startlinie==-1){ startlinie=i; startcol=j; }
+                cntalbe++;
             }
         }
     }
-    if(white_count==0){
-        for(int i=0; i<n; i++) free(visited[i]);
-        free(visited);
+    if(cntalbe==0){
+        for(int i=0; i<n; i++) free(vizitat[i]);
+        free(vizitat);
         return 0;
     }
     
-    dfs(start_r, start_c, n, is_black, visited);
-    int visited_count=0;
+    dfs(startlinie, startcol, n, is_black, vizitat);
+    int vizitat_cnt=0;
     for(int i=0; i<n; i++){
         for(int j=0; j<n; j++){
-            if(visited[i][j]) visited_count++;
+            if(vizitat[i][j]) vizitat_cnt++;
         }
     }
     
-    for(int i=0; i<n; i++) free(visited[i]);
-    free(visited);
-    return visited_count==white_count;
+    for(int i=0; i<n; i++) free(vizitat[i]);
+    free(vizitat);
+    return vizitat_cnt==cntalbe;
 }
 
-int check_no_duplicates(int n, int** grid, int** is_black){
+int faraduplicate(int n, int** matrice, int** is_black){
     for(int i=0; i<n; i++){
         for(int j=0; j<n; j++){
             if (is_black[i][j]) continue;
             for(int k=j+1; k<n; k++){
-                if(!is_black[i][k] && grid[i][j]==grid[i][k]) return 0;
+                if(!is_black[i][k] && matrice[i][j]==matrice[i][k]) return 0;
             }
             for(int k=i+1; k<n; k++){
-                if(!is_black[k][j] && grid[i][j]==grid[k][j]) return 0;
+                if(!is_black[k][j] && matrice[i][j]==matrice[k][j]) return 0;
             }
         }
     }
     return 1;
 }
 
-void backtrack(int r, int c, HitoriContext* ctx){
-    if(ctx->found) return;
-    if(r==ctx->n){
-        if(check_no_duplicates(ctx->n, ctx->grid, ctx->is_black) && check_connectivity(ctx->n, ctx->is_black)){  
-            ctx->found=1;
-            for(int i=0; i < ctx->n; i++)
-                for(int j=0; j < ctx->n; j++)
-                    ctx->best_is_black[i][j] = ctx->is_black[i][j];
+void backtrack(int l, int c, hitori* var){
+    if(var->gasit) return;
+    if(l==var->n){
+        if(faraduplicate(var->n, var->matrice, var->is_black) && verificconectivitate(var->n, var->is_black)){  
+            var->gasit=1;
+            for(int i=0; i < var->n; i++)
+                for(int j=0; j < var->n; j++)
+                    var->bestis_black[i][j] = var->is_black[i][j];
         }
         return;
     }
     
-    int next_r = r + (c+1) / ctx->n;
-    int next_c = (c+1) % ctx->n;
-    ctx->is_black[r][c]=0;
-    backtrack(next_r, next_c, ctx);
+    int nextl = l + (c+1) / var->n;
+    int nextc = (c+1) % var->n;
+    var->is_black[l][c]=0;
+    backtrack(nextl, nextc, var);
 
-    int can_be_black=1;
-    if(r>0 && ctx->is_black[r-1][c]==1) can_be_black=0;
-    if(c>0 && ctx->is_black[r][c-1]==1) can_be_black=0;
-    if(!ctx->found && can_be_black){
-        ctx->is_black[r][c]=1;
-        backtrack(next_r, next_c, ctx);
-        ctx->is_black[r][c]=0;
+    int poateblack=1;
+    if(l>0 && var->is_black[l-1][c]==1) poateblack=0;
+    if(c>0 && var->is_black[l][c-1]==1) poateblack=0;
+    if(!var->gasit && poateblack){
+        var->is_black[l][c]=1;
+        backtrack(nextl, nextc, var);
+        var->is_black[l][c]=0;
     }
 }
 
 int solve_hitori(const char* in_filename, const char* out_filename){
     FILE* fin=fopen(in_filename, "r");
-    if(!fin) return -1;
-    HitoriContext ctx;
-    ctx.found=0;
-    fscanf(fin, "%d", &ctx.n);
-    ctx.grid=(int**)malloc(ctx.n * sizeof(int*));
-    ctx.is_black=(int**)malloc(ctx.n * sizeof(int*));
-    ctx.best_is_black=(int**)malloc(ctx.n * sizeof(int*));
-    for(int i=0; i<ctx.n; i++){
-        ctx.grid[i]=(int*)malloc(ctx.n * sizeof(int));
-        ctx.is_black[i]=(int*)calloc(ctx.n, sizeof(int));
-        ctx.best_is_black[i]=(int*)calloc(ctx.n, sizeof(int));
-        for(int j=0; j<ctx.n; j++){
-            fscanf(fin, "%d", &ctx.grid[i][j]);
+    hitori var;
+    var.gasit=0;
+    fscanf(fin, "%d", &var.n);
+    var.matrice=(int**)malloc(var.n * sizeof(int*));
+    var.is_black=(int**)malloc(var.n * sizeof(int*));
+    var.bestis_black=(int**)malloc(var.n * sizeof(int*));
+    for(int i=0; i<var.n; i++){
+        var.matrice[i]=(int*)malloc(var.n * sizeof(int));
+        var.is_black[i]=(int*)calloc(var.n, sizeof(int));
+        var.bestis_black[i]=(int*)calloc(var.n, sizeof(int));
+        for(int j=0; j<var.n; j++){
+            fscanf(fin, "%d", &var.matrice[i][j]);
         }
     }
     fclose(fin);
-    backtrack(0, 0, &ctx);
+    backtrack(0, 0, &var);
     FILE* fout=fopen(out_filename, "w");
-    int moves=0;
-    if(ctx.found){
-        for(int i=0; i<ctx.n; i++){
-            for(int j=0; j<ctx.n; j++){
-                if(ctx.best_is_black[i][j]){
+    int mutari=0;
+    if(var.gasit){
+        for(int i=0; i<var.n; i++){
+            for(int j=0; j<var.n; j++){
+                if(var.bestis_black[i][j]){
                     fprintf(fout, "B ");
-                    moves++;
+                    mutari++;
                 }else{
-                    fprintf(fout, "%d ", ctx.grid[i][j]);
+                    fprintf(fout, "%d ", var.matrice[i][j]);
                 }
             }
             fprintf(fout, "\n");
         }
-        fprintf(fout, "Numar mutari (celule negre): %d\n", moves);
+        fprintf(fout, "Numar mutari (celule negre): %d\n", mutari);
     } else {
         fprintf(fout, "Nu exista solutie.\n");
-        moves = -1;
+        mutari=-1;
     }
     fclose(fout);
-    for(int i=0; i<ctx.n; i++){
-        free(ctx.grid[i]);
-        free(ctx.is_black[i]);
-        free(ctx.best_is_black[i]);
+    for(int i=0; i<var.n; i++){
+        free(var.matrice[i]);
+        free(var.is_black[i]);
+        free(var.bestis_black[i]);
     }
-    free(ctx.grid);
-    free(ctx.is_black);
-    free(ctx.best_is_black);
-    return moves;
+    free(var.matrice);
+    free(var.is_black);
+    free(var.bestis_black);
+    return mutari;
 }
 
-void create_test_file(const char* filename, int n, int* values) {
+void creeazatestfile(const char* filename, int n, int* valori) {
     FILE* f=fopen(filename, "w");
     fprintf(f, "%d\n", n);
     for(int i=0; i<n*n; i++){
-        fprintf(f, "%d ", values[i]);
-        if((i+1) % n == 0) fprintf(f, "\n");
+        fprintf(f, "%d ", valori[i]);
+        if((i+1)%n==0) fprintf(f, "\n");
     }
     fclose(f);
 }
 
 int main() {
-    //Test1: Matrice 2x2 fara duplicate : Nicio mutare necesara
-    int test1_data[]={1, 2, 2, 1};
+    //Test1: Matrice 2x2 fara duplicate: Nicio mutare necesara
+    int test1[]={1, 2, 2, 1};
     
     //Test2: Matrice 3x3 cu un singur set de duplicate (trebuie eliminat un 1)
-    int test2_data[]={1, 2, 3, 1, 4, 5, 6, 7, 8};
+    int test2[]={1, 2, 3, 1, 4, 5, 6, 7, 8};
     
     //Test3: Matrice 3x3 unde un numar este izolat
-    int test3_data[]={1, 1, 2, 2, 3, 3, 4, 5, 6};
-    create_test_file("input1.txt", 2, test1_data);
-    create_test_file("input2.txt", 3, test2_data);
-    create_test_file("input3.txt", 3, test3_data);
+    int test3[]={1, 7, 3, 5, 6, 5, 4, 7, 5, 7, 7, 3, 2, 6, 2, 6, 4, 5, 1, 5, 5, 3, 1, 6, 2, 6, 4, 6, 7, 6, 1, 5, 4, 5, 2, 3, 4, 2, 1, 7, 6, 6, 6, 3, 5, 6, 2, 3, 1};
+    creeazatestfile("input1.txt", 2, test1);
+    creeazatestfile("input2.txt", 3, test2);
+    creeazatestfile("input3.txt", 7, test3);
 
     int result1=solve_hitori("input1.txt", "output1.txt");
     assert(result1==0);
@@ -183,7 +182,7 @@ int main() {
 
     int result3=solve_hitori("input3.txt", "output3.txt");
     assert(result3>=2);
-    printf("Test 3 trecut cu succes, %d mutari confirmate (minim 2).\n", result3);
+    printf("Test 3 trecut cu succes, %d mutari confirmate\n", result3);
     printf("\nToate cele 3 verificari assert au trecut conform regulamentului! \n");
     return 0;
 }
